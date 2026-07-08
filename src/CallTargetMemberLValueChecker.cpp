@@ -53,12 +53,16 @@ private:
 } // namespace
 
 void CallTargetMemberLValueChecker::setFunctionNames(StringRef Names) {
-  llvm::SmallVector<StringRef, 16> Parts;
-  Names.split(Parts, ",");
-  for (StringRef Part : Parts) {
-    Part = Part.trim();
-    if (!Part.empty())
-      FunctionNames.insert(Part);
+  llvm::SmallVector<StringRef, 16> SemicolonParts;
+  Names.split(SemicolonParts, ";");
+  for (StringRef SemicolonPart : SemicolonParts) {
+    llvm::SmallVector<StringRef, 8> CommaParts;
+    SemicolonPart.split(CommaParts, ",");
+    for (StringRef Part : CommaParts) {
+      Part = Part.trim();
+      if (!Part.empty())
+        FunctionNames.insert(Part);
+    }
   }
 }
 

@@ -10,7 +10,7 @@ demo.CallTargetMemberLValue
 
 它演示了三个能力：
 
-1. 通过配置输入一组函数名，例如 `malloc,calloc`。
+1. 通过配置输入一组函数名，例如 `malloc;calloc`。
 2. 匹配对这些函数的调用，并打印被调函数声明位置。
 3. 如果调用结果被赋值给结构体或联合体成员，则在 analyzer warning 中给出结构体名称和成员名称。
 
@@ -78,7 +78,7 @@ ninja clang
   --analyze \
   -Xclang -analyzer-checker=demo.CallTargetMemberLValue \
   -Xclang -analyzer-config \
-  -Xclang demo.CallTargetMemberLValue:FunctionNames=malloc,open_resource \
+  -Xclang 'demo.CallTargetMemberLValue:FunctionNames=malloc;open_resource' \
   sample.c
 ```
 
@@ -112,6 +112,10 @@ cd examples
 make analyze-with-demo-checker \
   CLANG_ANALYZER=/path/to/llvm-project/build/bin/clang
 ```
+
+注意：`-analyzer-config` 本身使用逗号分隔多个配置项，因此命令行里不要写成
+`FunctionNames=malloc,open_resource`。这里使用分号分隔函数名，并用引号保护整个
+配置参数，避免 shell 把分号解释成命令分隔符。
 
 预期会看到类似输出：
 

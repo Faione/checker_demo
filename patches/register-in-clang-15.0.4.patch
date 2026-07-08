@@ -27,7 +27,7 @@ index b5a70c7..1111111 100644
 +    CmdLineOption<String,
 +                  "FunctionNames",
 +                  "",
-+                  "Comma-separated function names to match, for example malloc,calloc",
++                  "Semicolon-separated function names to match, for example malloc;calloc",
 +                  Released>
 +  ]>,
 +  Documentation<NotDocumented>;

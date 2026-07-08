@@ -1,4 +1,5 @@
 CC ?= clang
+CLANG_ANALYZER ?= clang
 CFLAGS ?= -std=c11 -Wall -Wextra -pedantic -g
 TARGET := member_assignment_demo
 SOURCES := member_assignment_demo.c
@@ -14,7 +15,7 @@ analyze-with-demo-checker:
 	$(CLANG_ANALYZER) --analyze \
 		-Xclang -analyzer-checker=demo.CallTargetMemberLValue \
 		-Xclang -analyzer-config \
-		-Xclang demo.CallTargetMemberLValue:FunctionNames=malloc,open_resource \
+		-Xclang 'demo.CallTargetMemberLValue:FunctionNames=malloc;open_resource' \
 		$(SOURCES)
 
 clean:

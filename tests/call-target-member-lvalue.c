@@ -1,5 +1,5 @@
 // RUN: %clang_analyze_cc1 -analyzer-checker=demo.CallTargetMemberLValue \
-// RUN:   -analyzer-config demo.CallTargetMemberLValue:FunctionNames=malloc,open_resource \
+// RUN:   -analyzer-config 'demo.CallTargetMemberLValue:FunctionNames=malloc;open_resource' \
 // RUN:   -verify %s
 
 typedef __SIZE_TYPE__ size_t;
