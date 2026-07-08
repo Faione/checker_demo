@@ -1,8 +1,8 @@
 diff --git a/clang/include/clang/StaticAnalyzer/Checkers/Checkers.td b/clang/include/clang/StaticAnalyzer/Checkers/Checkers.td
-index 6a4e6c0..1111111 100644
+index b5a70c7..1111111 100644
 --- a/clang/include/clang/StaticAnalyzer/Checkers/Checkers.td
 +++ b/clang/include/clang/StaticAnalyzer/Checkers/Checkers.td
-@@ -105,6 +105,8 @@ def MPI : Package<"mpi">, ParentPackage<OptIn>;
+@@ -101,6 +101,8 @@ def MPI : Package<"mpi">, ParentPackage<OptIn>;
  def LLVM : Package<"llvm">;
  def LLVMAlpha : Package<"llvm">, ParentPackage<Alpha>;
  
@@ -38,7 +38,7 @@ index 6a4e6c0..1111111 100644
  // Core Checkers.
  //===----------------------------------------------------------------------===//
 diff --git a/clang/lib/StaticAnalyzer/Checkers/CMakeLists.txt b/clang/lib/StaticAnalyzer/Checkers/CMakeLists.txt
-index 7f46068..2222222 100644
+index 1500f04..2222222 100644
 --- a/clang/lib/StaticAnalyzer/Checkers/CMakeLists.txt
 +++ b/clang/lib/StaticAnalyzer/Checkers/CMakeLists.txt
 @@ -10,2 +10,3 @@ add_clang_library(clangStaticAnalyzerCheckers

@@ -20,7 +20,7 @@ demo.CallTargetMemberLValue
 src/CallTargetMemberLValueChecker.cpp
 examples/member_assignment_demo.c
 tests/call-target-member-lvalue.c
-patches/register-in-clang-21.1.6.patch
+patches/register-in-clang-15.0.4.patch
 ```
 
 | 文件 | 作用 |
@@ -29,7 +29,7 @@ patches/register-in-clang-21.1.6.patch
 | `examples/member_assignment_demo.c` | 可普通编译运行的示例 C 程序 |
 | `examples/Makefile` | 示例程序构建与 checker 分析命令 |
 | `tests/call-target-member-lvalue.c` | lit 风格测试样例 |
-| `patches/register-in-clang-21.1.6.patch` | 将 checker 注册进 Clang 21.1.6 源码树的参考补丁 |
+| `patches/register-in-clang-15.0.4.patch` | 将 checker 注册进 Clang 15.0.4 源码树的参考补丁 |
 
 ## 安装到 Clang 源码树
 
@@ -49,7 +49,7 @@ cp src/CallTargetMemberLValueChecker.cpp \
 然后手动注册 checker，或参考这个补丁：
 
 ```text
-patches/register-in-clang-21.1.6.patch
+patches/register-in-clang-15.0.4.patch
 ```
 
 补丁内容很小，主要修改两个位置：
