@@ -15,8 +15,9 @@ CTU_CHAIN_SOURCES := \
 ALL_SOURCES := $(SOURCES) $(CTU_CHAIN_SOURCES)
 CTU_DIR := ctu
 CTU_INDEX := $(CTU_DIR)/externalDefMap.txt
+CTU_INVOCATIONS := $(CTU_DIR)/invocations.yaml
 
-.PHONY: all clean analyze-with-demo-checker ctu-build-index analyze-with-demo-checker-ctu ctu-chain ctu-chain-show-expected analyze-ctu-chain-callgraph
+.PHONY: all clean analyze-with-demo-checker ctu-build-index ctu-build-invocations analyze-with-demo-checker-ctu ctu-chain ctu-chain-show-expected analyze-ctu-chain-reachability
 
 all: $(TARGET)
 
@@ -49,7 +50,19 @@ compile_commands.json:
 	printf '\n' >> $@
 	printf ']\n' >> $@
 
-ctu-build-index: compile_commands.json
+ctu-build-invocations:
+	mkdir -p $(CTU_DIR)
+	rm -f $(CTU_INVOCATIONS)
+	for src in $(ALL_SOURCES); do \
+		abs="$$(pwd)/$$src"; \
+		printf '"%s":\n' "$$abs" >> $(CTU_INVOCATIONS); \
+		printf '  - "%s"\n' "$(CLANG_ANALYZER)" >> $(CTU_INVOCATIONS); \
+		printf '  - "-std=c11"\n' >> $(CTU_INVOCATIONS); \
+		printf '  - "-c"\n' >> $(CTU_INVOCATIONS); \
+		printf '  - "%s"\n' "$$abs" >> $(CTU_INVOCATIONS); \
+	done
+
+ctu-build-index: compile_commands.json ctu-build-invocations
 	mkdir -p $(CTU_DIR)
 	$(CLANG_EXTDEF_MAPPING) -p . $(ALL_SOURCES) > $(CTU_INDEX)
 
@@ -59,14 +72,27 @@ analyze-with-demo-checker-ctu: ctu-build-index
 		-Xclang -analyzer-config \
 		-Xclang 'demo.CallTargetMemberLValue:FunctionNames=malloc;open_resource;create_remote_resource' \
 		-Xclang -analyzer-config \
-		-Xclang ctu-dir=$(CTU_DIR) \
-		member_assignment_demo.c
-
-analyze-ctu-chain-callgraph: ctu-build-index
-	$(CLANG_ANALYZER) --analyze \
-		-Xclang -analyzer-checker=debug.DumpCallGraph \
+		-Xclang experimental-enable-naive-ctu-analysis=true \
 		-Xclang -analyzer-config \
 		-Xclang ctu-dir=$(CTU_DIR) \
+		-Xclang -analyzer-config \
+		-Xclang ctu-invocation-list=$(CTU_INVOCATIONS) \
+		member_assignment_demo.c
+
+analyze-ctu-chain-reachability: ctu-build-index
+	$(CLANG_ANALYZER) --analyze \
+		-Xclang -analyzer-checker=debug.ExprInspection \
+		-Xclang -analyzer-output=text \
+		-Xclang -analyzer-config \
+		-Xclang experimental-enable-naive-ctu-analysis=true \
+		-Xclang -analyzer-config \
+		-Xclang ctu-dir=$(CTU_DIR) \
+		-Xclang -analyzer-config \
+		-Xclang ctu-invocation-list=$(CTU_INVOCATIONS) \
+		-Xclang -analyzer-config \
+		-Xclang ctu-phase1-inlining=all \
+		-Xclang -analyzer-config \
+		-Xclang display-ctu-progress=true \
 		ctu_chain_demo.c
 
 clean:

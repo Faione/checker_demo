@@ -12,7 +12,7 @@ int ctu_route_cron(int job) { return ctu_service_batch(job + 200); }
 int ctu_route_cli(int command) { return ctu_service_direct(command + 300); }
 
 int ctu_route_retry(int attempt) {
-  return ctu_gateway_emergency(attempt + 400);
+  return ctu_gateway_emergency(attempt + 400, CTU_ENTRY_RETRY);
 }
 
 int ctu_route_healthcheck(int probe) {

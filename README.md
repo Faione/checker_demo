@@ -21,6 +21,9 @@ src/CallTargetMemberLValueChecker.cpp
 examples/member_assignment_demo.c
 examples/resource_factory.c
 examples/resource_factory.h
+examples/ctu_chain_*.c
+examples/ctu_chain.h
+examples/ctu_chain_expected_paths.txt
 tests/call-target-member-lvalue.c
 patches/register-in-clang-15.0.4.patch
 ```
@@ -31,6 +34,8 @@ patches/register-in-clang-15.0.4.patch
 | `examples/member_assignment_demo.c` | 可普通编译运行的主示例 C 程序 |
 | `examples/resource_factory.c` | CTU case 使用的另一个 translation unit |
 | `examples/resource_factory.h` | 跨 TU 函数声明 |
+| `examples/ctu_chain_*.c` | CTU 能力边界探索用的长调用链 demo |
+| `examples/ctu_chain_expected_paths.txt` | `ctu_bottom_sink` 的预期入口和调用链 |
 | `examples/Makefile` | 示例程序构建与 checker 分析命令 |
 | `tests/call-target-member-lvalue.c` | lit 风格测试样例 |
 | `patches/register-in-clang-15.0.4.patch` | 将 checker 注册进 Clang 15.0.4 源码树的参考补丁 |
@@ -180,6 +185,127 @@ ctu/externalDefMap.txt
 注意：当前 checker 主要演示“调用点 + 左值成员识别”，本身不需要读取被调函数体也能报告
 `holder->ctu_buffer = create_remote_resource()`。CTU case 的意义是把示例项目扩展成真实的多
 translation unit 形态，方便后续继续学习“导入另一个 TU 的函数体并做跨过程推理”的 checker。
+
+## CTU 能力边界探索：长调用链
+
+`examples/ctu_chain_*.c` 提供了一个专门用于探索 CTU 能力边界的长调用链 demo。
+
+目标底层函数是：
+
+```text
+ctu_bottom_sink
+```
+
+它定义在：
+
+```text
+ctu_chain_bottom.c
+```
+
+入口函数定义在：
+
+```text
+ctu_chain_entry.c
+```
+
+中间经过多个 translation unit：
+
+```text
+ctu_chain_entry.c
+  -> ctu_chain_router.c
+  -> ctu_chain_service.c
+  -> ctu_chain_gateway.c
+  -> ctu_chain_bottom.c
+```
+
+普通运行：
+
+```sh
+cd examples
+make ctu-chain
+./ctu_chain_demo
+```
+
+查看预期路径：
+
+```sh
+make ctu-chain-show-expected
+```
+
+预期会走到 `ctu_bottom_sink` 的入口：
+
+```text
+ctu_entry_http
+ctu_entry_cron
+ctu_entry_cli
+ctu_entry_retry
+```
+
+预期不会走到 `ctu_bottom_sink` 的入口：
+
+```text
+ctu_entry_healthcheck
+```
+
+生成 CTU 索引：
+
+```sh
+make ctu-build-index \
+  CLANG_ANALYZER=/path/to/llvm-project/build/bin/clang \
+  CLANG_EXTDEF_MAPPING=/path/to/llvm-project/build/bin/clang-extdef-mapping
+```
+
+该命令会基于 `compile_commands.json` 生成 LLVM 15 CTU 需要的两个输入文件：
+
+```text
+ctu/externalDefMap.txt
+ctu/invocations.yaml
+```
+
+其中：
+
+| 文件 | 作用 |
+|---|---|
+| `ctu/externalDefMap.txt` | 由 `clang-extdef-mapping` 生成，描述函数 USR 到外部 TU 源文件的映射 |
+| `ctu/invocations.yaml` | 描述每个外部 TU 应该如何被 clang 重新解析；LLVM 15 的 on-demand CTU 需要它 |
+
+验证 CTU 是否真的导入并分析了跨 TU 函数体：
+
+```sh
+make analyze-ctu-chain-reachability \
+  CLANG_ANALYZER=/path/to/llvm-project/build/bin/clang \
+  CLANG_EXTDEF_MAPPING=/path/to/llvm-project/build/bin/clang-extdef-mapping
+```
+
+这个目标使用：
+
+```text
+-analyzer-checker=debug.ExprInspection
+-analyzer-config experimental-enable-naive-ctu-analysis=true
+-analyzer-config ctu-dir=ctu
+-analyzer-config ctu-invocation-list=ctu/invocations.yaml
+-analyzer-config ctu-phase1-inlining=all
+-analyzer-config display-ctu-progress=true
+```
+
+`ctu_bottom_sink` 中放置了 `clang_analyzer_warnIfReached()` 探针。普通编译时它是空函数；
+analyzer 运行时由 `debug.ExprInspection` 把它转换成 warning。
+
+如果 CTU 生效，预期会在 `ctu_chain_bottom.c` 中看到多条 `REACHABLE` warning，
+并且 `display-ctu-progress=true` 会打印外部 AST 加载信息。每条 warning 的路径应该从
+`ctu_chain_demo.c` 中的入口调用出发，跨过 `entry/router/service/gateway` 等不同 TU，
+最终到达 `ctu_bottom_sink`。
+
+注意：只使用 `debug.DumpCallGraph` 不足以验证这个能力。它主要打印当前 AST 的调用图；
+在 LLVM 15 中，如果没有显式开启：
+
+```text
+experimental-enable-naive-ctu-analysis=true
+ctu-invocation-list=ctu/invocations.yaml
+```
+
+analyzer 通常只会分析主 TU 中可见的函数，看起来就像“只分析到了 main 中的函数”。
+这个 demo 改用 warning 管线来证明跨 TU 函数体确实被导入和内联。
 
 ## 测试样例
 
