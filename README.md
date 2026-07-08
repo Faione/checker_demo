@@ -19,6 +19,8 @@ demo.CallTargetMemberLValue
 ```text
 src/CallTargetMemberLValueChecker.cpp
 examples/member_assignment_demo.c
+examples/resource_factory.c
+examples/resource_factory.h
 tests/call-target-member-lvalue.c
 patches/register-in-clang-15.0.4.patch
 ```
@@ -26,7 +28,9 @@ patches/register-in-clang-15.0.4.patch
 | 文件 | 作用 |
 |---|---|
 | `src/CallTargetMemberLValueChecker.cpp` | checker 实现源码 |
-| `examples/member_assignment_demo.c` | 可普通编译运行的示例 C 程序 |
+| `examples/member_assignment_demo.c` | 可普通编译运行的主示例 C 程序 |
+| `examples/resource_factory.c` | CTU case 使用的另一个 translation unit |
+| `examples/resource_factory.h` | 跨 TU 函数声明 |
 | `examples/Makefile` | 示例程序构建与 checker 分析命令 |
 | `tests/call-target-member-lvalue.c` | lit 风格测试样例 |
 | `patches/register-in-clang-15.0.4.patch` | 将 checker 注册进 Clang 15.0.4 源码树的参考补丁 |
@@ -103,6 +107,7 @@ make
 ```c
 holder->heap_buffer = malloc(32);
 local.copy_buffer = open_resource("from open_resource");
+holder->ctu_buffer = create_remote_resource();
 ```
 
 安装并编译好自定义 checker 后，可以对同一个示例运行分析：
@@ -120,9 +125,61 @@ make analyze-with-demo-checker \
 预期会看到类似输出：
 
 ```text
-member_assignment_demo.c:23:25: warning: matched configured function call 'malloc'; callee declaration: member_assignment_demo.c:12:22; call site: member_assignment_demo.c:23:25; assigned struct member: BufferHolder.heap_buffer (via ->) [demo.CallTargetMemberLValue]
-member_assignment_demo.c:33:23: warning: matched configured function call 'open_resource'; callee declaration: member_assignment_demo.c:9:14; call site: member_assignment_demo.c:33:23; assigned struct member: BufferHolder.copy_buffer (via .) [demo.CallTargetMemberLValue]
+member_assignment_demo.c:...: warning: matched configured function call 'malloc'; callee declaration: ...; call site: ...; assigned struct member: BufferHolder.heap_buffer (via ->) [demo.CallTargetMemberLValue]
+member_assignment_demo.c:...: warning: matched configured function call 'open_resource'; callee declaration: resource_factory.h:...; call site: ...; assigned struct member: BufferHolder.copy_buffer (via .) [demo.CallTargetMemberLValue]
+member_assignment_demo.c:...: warning: matched configured function call 'create_remote_resource'; callee declaration: resource_factory.h:...; call site: ...; assigned struct member: BufferHolder.ctu_buffer (via ->) [demo.CallTargetMemberLValue]
 ```
+
+## CTU 示例
+
+`examples/resource_factory.c` 和 `examples/member_assignment_demo.c` 共同组成一个
+Cross Translation Unit（CTU）学习样例：
+
+```text
+member_assignment_demo.c
+  -> include resource_factory.h
+  -> call create_remote_resource()
+
+resource_factory.c
+  -> define create_remote_resource()
+  -> define open_resource()
+```
+
+普通编译会同时编译两个 `.c` 文件：
+
+```sh
+cd examples
+make
+```
+
+如果要运行 CTU 分析，需要同时提供已经构建好的 `clang` 和
+`clang-extdef-mapping`：
+
+```sh
+cd examples
+make analyze-with-demo-checker-ctu \
+  CLANG_ANALYZER=/path/to/llvm-project/build/bin/clang \
+  CLANG_EXTDEF_MAPPING=/path/to/llvm-project/build/bin/clang-extdef-mapping
+```
+
+该目标会生成：
+
+```text
+compile_commands.json
+ctu/externalDefMap.txt
+```
+
+并把：
+
+```text
+-analyzer-config ctu-dir=ctu
+```
+
+传给 analyzer。
+
+注意：当前 checker 主要演示“调用点 + 左值成员识别”，本身不需要读取被调函数体也能报告
+`holder->ctu_buffer = create_remote_resource()`。CTU case 的意义是把示例项目扩展成真实的多
+translation unit 形态，方便后续继续学习“导入另一个 TU 的函数体并做跨过程推理”的 checker。
 
 ## 测试样例
 
