@@ -1,0 +1,30 @@
+Target bottom function:
+  ctu_bottom_sink
+
+Entries that should reach ctu_bottom_sink:
+  ctu_entry_http
+    -> ctu_route_http
+    -> ctu_service_authorize
+    -> ctu_gateway_commit
+    -> ctu_bottom_sink
+
+  ctu_entry_cron
+    -> ctu_route_cron
+    -> ctu_service_batch
+    -> ctu_gateway_commit
+    -> ctu_bottom_sink
+
+  ctu_entry_cli
+    -> ctu_route_cli
+    -> ctu_service_direct
+    -> ctu_bottom_sink
+
+  ctu_entry_retry
+    -> ctu_route_retry
+    -> ctu_gateway_emergency
+    -> ctu_bottom_sink
+
+Entry that should NOT reach ctu_bottom_sink:
+  ctu_entry_healthcheck
+    -> ctu_route_healthcheck
+    -> ctu_service_no_sink
