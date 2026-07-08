@@ -4,9 +4,16 @@ CLANG_EXTDEF_MAPPING ?= clang-extdef-mapping
 CFLAGS ?= -std=c11 -Wall -Wextra -pedantic -g
 TARGET := member_assignment_demo
 SOURCES := member_assignment_demo.c resource_factory.c
+MEMBER_CTU_EXTERNAL_SOURCES := resource_factory.c
 CTU_CHAIN_TARGET := ctu_chain_demo
 CTU_CHAIN_SOURCES := \
 	ctu_chain_demo.c \
+	ctu_chain_entry.c \
+	ctu_chain_router.c \
+	ctu_chain_service.c \
+	ctu_chain_gateway.c \
+	ctu_chain_bottom.c
+CTU_CHAIN_EXTERNAL_SOURCES := \
 	ctu_chain_entry.c \
 	ctu_chain_router.c \
 	ctu_chain_service.c \
@@ -17,7 +24,7 @@ CTU_DIR := ctu
 CTU_INDEX := $(CTU_DIR)/externalDefMap.txt
 CTU_INVOCATIONS := $(CTU_DIR)/invocations.yaml
 
-.PHONY: all clean analyze-with-demo-checker ctu-build-index ctu-build-invocations analyze-with-demo-checker-ctu ctu-chain ctu-chain-show-expected analyze-ctu-chain-reachability
+.PHONY: all clean analyze-with-demo-checker ctu-build-member-index ctu-build-chain-index ctu-build-invocations analyze-with-demo-checker-ctu ctu-chain ctu-chain-show-expected analyze-ctu-chain-reachability
 
 all: $(TARGET)
 
@@ -62,11 +69,15 @@ ctu-build-invocations:
 		printf '  - "%s"\n' "$$abs" >> $(CTU_INVOCATIONS); \
 	done
 
-ctu-build-index: compile_commands.json ctu-build-invocations
+ctu-build-member-index: compile_commands.json ctu-build-invocations
 	mkdir -p $(CTU_DIR)
-	$(CLANG_EXTDEF_MAPPING) -p . $(ALL_SOURCES) > $(CTU_INDEX)
+	$(CLANG_EXTDEF_MAPPING) -p . $(MEMBER_CTU_EXTERNAL_SOURCES) > $(CTU_INDEX)
 
-analyze-with-demo-checker-ctu: ctu-build-index
+ctu-build-chain-index: compile_commands.json ctu-build-invocations
+	mkdir -p $(CTU_DIR)
+	$(CLANG_EXTDEF_MAPPING) -p . $(CTU_CHAIN_EXTERNAL_SOURCES) > $(CTU_INDEX)
+
+analyze-with-demo-checker-ctu: ctu-build-member-index
 	$(CLANG_ANALYZER) --analyze \
 		-Xclang -analyzer-checker=demo.CallTargetMemberLValue \
 		-Xclang -analyzer-config \
@@ -79,7 +90,7 @@ analyze-with-demo-checker-ctu: ctu-build-index
 		-Xclang ctu-invocation-list=$(CTU_INVOCATIONS) \
 		member_assignment_demo.c
 
-analyze-ctu-chain-reachability: ctu-build-index
+analyze-ctu-chain-reachability: ctu-build-chain-index
 	$(CLANG_ANALYZER) --analyze \
 		-Xclang -analyzer-checker=debug.ExprInspection \
 		-Xclang -analyzer-output=text \

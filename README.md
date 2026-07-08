@@ -250,7 +250,7 @@ ctu_entry_healthcheck
 生成 CTU 索引：
 
 ```sh
-make ctu-build-index \
+make ctu-build-chain-index \
   CLANG_ANALYZER=/path/to/llvm-project/build/bin/clang \
   CLANG_EXTDEF_MAPPING=/path/to/llvm-project/build/bin/clang-extdef-mapping
 ```
@@ -268,6 +268,16 @@ ctu/invocations.yaml
 |---|---|
 | `ctu/externalDefMap.txt` | 由 `clang-extdef-mapping` 生成，描述函数 USR 到外部 TU 源文件的映射 |
 | `ctu/invocations.yaml` | 描述每个外部 TU 应该如何被 clang 重新解析；LLVM 15 的 on-demand CTU 需要它 |
+
+注意：`externalDefMap.txt` 只应该包含当前分析入口 TU 之外的外部定义。长调用链 demo
+分析入口是 `ctu_chain_demo.c`，所以索引只包含 `ctu_chain_entry.c`、
+`ctu_chain_router.c`、`ctu_chain_service.c`、`ctu_chain_gateway.c` 和
+`ctu_chain_bottom.c`。如果把多个独立程序的入口文件一起放进
+`clang-extdef-mapping`，例如同时包含两个 `main`，LLVM 15 会报：
+
+```text
+multiple definitions are found for the same key in index
+```
 
 验证 CTU 是否真的导入并分析了跨 TU 函数体：
 
