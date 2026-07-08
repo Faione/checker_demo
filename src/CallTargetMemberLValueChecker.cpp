@@ -189,14 +189,19 @@ void CallTargetMemberLValueChecker::checkPostStmt(const CallExpr *CE,
   reportMatchedCall(FD, CE, C);
 }
 
-void ento::registerCallTargetMemberLValueChecker(CheckerManager &Mgr) {
+namespace clang {
+namespace ento {
+
+void registerCallTargetMemberLValueChecker(CheckerManager &Mgr) {
   auto *Checker = Mgr.registerChecker<CallTargetMemberLValueChecker>();
   Checker->setFunctionNames(Mgr.getAnalyzerOptions().getCheckerStringOption(
       Checker, "FunctionNames"));
 }
 
-bool ento::shouldRegisterCallTargetMemberLValueChecker(
-    const CheckerManager &Mgr) {
+bool shouldRegisterCallTargetMemberLValueChecker(const CheckerManager &Mgr) {
   (void)Mgr;
   return true;
 }
+
+} // namespace ento
+} // namespace clang
