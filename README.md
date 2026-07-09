@@ -44,6 +44,7 @@ patches/register-in-clang-15.0.4.patch
 | `cases/union_member_assignment` | union 字段也能通过 `RecordDecl` 被识别 |
 | `cases/ctu_member_assignment` | 多 translation unit 项目中的成员赋值调用点 |
 | `cases/ctu_reachability_chain` | 长调用链跨 TU reachability，验证 CTU 能否导入并到达底层函数 |
+| `cases/ctu_link_resolution_boundary` | weak/strong 同名符号的链接选择，说明 CTU 不模拟 linker 解析 |
 
 列出所有 case：
 
@@ -167,6 +168,11 @@ ctu-invocation-list=ctu/invocations.yaml
 ```text
 multiple definitions are found for the same key in index
 ```
+
+`cases/ctu_link_resolution_boundary` 演示与链接行为相关的边界：同一个函数同时存在 weak
+定义和 strong 定义时，真实链接会选择 strong 定义；CTU 则只按照 `externalDefMap.txt`
+导入某个源码定义，不能表达“根据最终链接命令选择哪个符号定义”的语义。如果把两个定义都放入
+CTU index，同一个 USR 会变成歧义映射。
 
 ## 测试样例
 

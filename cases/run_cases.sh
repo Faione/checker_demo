@@ -10,6 +10,7 @@ configured_function_filter
 union_member_assignment
 ctu_member_assignment
 ctu_reachability_chain
+ctu_link_resolution_boundary
 "
 
 usage() {
@@ -49,9 +50,12 @@ target_for() {
   case "$action:$case_name" in
     analyze:ctu_member_assignment) printf '%s\n' "analyze-ctu" ;;
     analyze:ctu_reachability_chain) printf '%s\n' "analyze" ;;
+    analyze:ctu_link_resolution_boundary) printf '%s\n' "analyze" ;;
     build:ctu_member_assignment) printf '%s\n' "all" ;;
     build:ctu_reachability_chain) printf '%s\n' "all" ;;
+    build:ctu_link_resolution_boundary) printf '%s\n' "all" ;;
     run:ctu_reachability_chain) printf '%s\n' "run" ;;
+    run:ctu_link_resolution_boundary) printf '%s\n' "run" ;;
     run:*) printf '%s\n' "__skip__" ;;
     clean:*) printf '%s\n' "clean" ;;
     analyze:*) printf '%s\n' "analyze" ;;
