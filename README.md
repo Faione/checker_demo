@@ -41,6 +41,9 @@ patches/register-in-clang-15.0.4.patch
 | `cases/pointer_member_assignment` | `holder->field = malloc(...)`，识别 `via ->` |
 | `cases/value_member_assignment` | `local.field = open_resource()`，识别 `via .` |
 | `cases/configured_function_filter` | `FunctionNames` 只报告配置过的函数 |
+| `cases/malloc_leak_path_sensitive` | 内存泄漏 checker 的路径敏感释放判断 |
+| `cases/malloc_leak_special_contract` | 仅在特殊约定条件下触发的路径敏感内存泄漏 |
+| `cases/malloc_ownership_attributes` | 使用 `ownership_returns/takes` 建模实现不可见的自定义分配和释放接口 |
 | `cases/union_member_assignment` | union 字段也能通过 `RecordDecl` 被识别 |
 | `cases/ctu_member_assignment` | 多 translation unit 项目中的成员赋值调用点 |
 | `cases/ctu_reachability_chain` | 长调用链跨 TU reachability，验证 CTU 能否导入并到达底层函数 |

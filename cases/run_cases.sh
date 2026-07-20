@@ -7,6 +7,9 @@ CASES="
 pointer_member_assignment
 value_member_assignment
 configured_function_filter
+malloc_leak_path_sensitive
+malloc_leak_special_contract
+malloc_ownership_attributes
 union_member_assignment
 ctu_member_assignment
 ctu_reachability_chain
